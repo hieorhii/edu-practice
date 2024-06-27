@@ -27,9 +27,10 @@ void MainWindow::on_convertButton_clicked()
     QString secondBox = ui->comboBox_2->currentText();
     qint8 secondBoxIndex = ui->comboBox_2->currentIndex();
     qint8 firstInput = ui->res_1->text().toInt();
-    std::string checkString = ui->res_1->text().toStdString();
-    std::regex rgx("^([1-9])|([1-9])([0-9]){1,9}|-([1-9])|-([1-9])([0-9]){1,9}$");
-    if(regex_match(checkString, rgx)){
+    QString checkString = ui->res_1->text();
+    QRegularExpression rgx("^([1-9])|([1-9])([0-9]){1,9}|-([1-9])|-([1-9])([0-9]){1,9}$");
+    QRegularExpressionMatch match = rgx.match(checkString);
+    if(match.hasMatch()){
     if (firstBox == degrees.at(0)){
         switch(secondBoxIndex) {
         case 0:
