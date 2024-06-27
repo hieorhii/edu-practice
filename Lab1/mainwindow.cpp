@@ -18,14 +18,15 @@ void MainWindow::on_actionExit_triggered()
     dialogWindow.setModal(true);
     dialogWindow.exec();
 }
+
 void MainWindow::on_convertButton_clicked()
 {
 
     QList<QString> degrees = {"Celsium", "Fahrengeit", "Kelvin", "Reaumur"};
     QString firstBox = ui->comboBox_3->currentText();
     QString secondBox = ui->comboBox_2->currentText();
-    int secondBoxIndex = ui->comboBox_2->currentIndex();
-    int firstInput = ui->res_1->text().toInt();
+    qint8 secondBoxIndex = ui->comboBox_2->currentIndex();
+    qint8 firstInput = ui->res_1->text().toInt();
     std::string checkString = ui->res_1->text().toStdString();
     std::regex rgx("^([1-9])|([1-9])([0-9]){1,9}|-([1-9])|-([1-9])([0-9]){1,9}$");
     if(regex_match(checkString, rgx)){
@@ -171,5 +172,25 @@ void MainWindow::on_checkBox_toggled(bool checked)
 {
     if(checked){ui->convertButton->setEnabled(true);}
     else{ui->convertButton->setEnabled(false);};
+}
+
+
+void MainWindow::on_pushButton_clicked()
+{
+    QFile file("in.txt");
+
+    if(!file.exists())
+    {
+        ui->label->setText("File doesn't exists");
+    }
+
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        ui->label->setText("Can't open the file");
+    }
+
+    QByteArray text = file.readLine();
+
+    ui->res_1->setText(text);
 }
 

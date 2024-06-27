@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QFile>
 #include <exitwindow.h>
 
 QT_BEGIN_NAMESPACE
@@ -23,6 +24,8 @@ private slots:
     void on_convertButton_clicked();
 
     void on_checkBox_toggled(bool checked);
+
+    void on_pushButton_clicked();
 
 private:
     Ui::MainWindow *ui;
