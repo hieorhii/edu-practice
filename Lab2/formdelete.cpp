@@ -18,3 +18,9 @@ void FormDelete::on_buttonBox_rejected()
     close();
 }
 
+
+void FormDelete::on_buttonBox_accepted()
+{
+    close();
+}
+

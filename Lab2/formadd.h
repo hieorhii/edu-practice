@@ -17,6 +17,14 @@ public:
 
 private:
     Ui::FormAdd *ui;
+
+signals:
+    void signalFormAdd(QString);
+    void signalFormAdd1(QString, QString, QString);
+
+private slots:
+    void on_buttonBox_accepted();
+    void on_buttonBox_rejected();
 };
 
 #endif // FORMADD_H

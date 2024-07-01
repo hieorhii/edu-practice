@@ -7,6 +7,8 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    connect(&formAdd, &FormAdd::signalFormAdd, this, &MainWindow::slotFormAdd);
+    connect(&formAdd, &FormAdd::signalFormAdd1, this, &MainWindow::slotFormAdd1);
 }
 
 MainWindow::~MainWindow()
@@ -44,12 +46,31 @@ void MainWindow::on_pushButton_3_clicked()
 
 void MainWindow::on_pushButton_clicked()
 {
-    form_add.show();
+    formAdd.show();
 }
 
 
 void MainWindow::on_pushButton_2_clicked()
 {
-    form_delete.show();
+    formDelete.show();
+}
+
+void MainWindow::slotFormAdd(QString a)
+{
+    QListWidgetItem *listItem = new QListWidgetItem(a);
+    ui->listWidget->addItem(listItem);
+}
+
+int s = 0;
+void MainWindow::slotFormAdd1(QString a, QString b, QString c)
+{
+    int *i = &s;
+    QTableWidgetItem *tableItem1 = new QTableWidgetItem(a);
+    ui->tableWidget->setItem(*i,0,tableItem1);
+    QTableWidgetItem *tableItem2 = new QTableWidgetItem(b);
+    ui->tableWidget->setItem(*i,1,tableItem2);
+    QTableWidgetItem *tableItem3 = new QTableWidgetItem(c);
+    ui->tableWidget->setItem(*i,2,tableItem3);
+    ++(*i);
 }
 

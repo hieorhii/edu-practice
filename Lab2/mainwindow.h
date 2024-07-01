@@ -32,7 +32,11 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    FormAdd form_add;
-    FormDelete form_delete;
+    FormAdd formAdd;
+    FormDelete formDelete;
+
+public slots:
+    void slotFormAdd(QString a);
+    void slotFormAdd1(QString a, QString b, QString c);
 };
 #endif // MAINWINDOW_H

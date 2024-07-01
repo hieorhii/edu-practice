@@ -96,16 +96,16 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_3">
+        <widget class="QLabel" name="label">
          <property name="text">
-          <string>SetRows</string>
+          <string/>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QLabel" name="label">
+        <widget class="QPushButton" name="pushButton_3">
          <property name="text">
-          <string/>
+          <string>SetRows</string>
          </property>
         </widget>
        </item>
