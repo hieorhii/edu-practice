@@ -63,6 +63,9 @@
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
         <widget class="QPushButton" name="pushButton">
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
          <property name="text">
           <string>AddElement</string>
          </property>
@@ -70,6 +73,9 @@
        </item>
        <item>
         <widget class="QPushButton" name="pushButton_2">
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
          <property name="text">
           <string>DeleteElement</string>
          </property>
@@ -77,8 +83,21 @@
        </item>
        <item>
         <widget class="QPushButton" name="pushButton_4">
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
          <property name="text">
-          <string>SortElement</string>
+          <string>StandartSort</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton_5">
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
+         <property name="text">
+          <string>MySort</string>
          </property>
         </widget>
        </item>
@@ -104,6 +123,9 @@
        </item>
        <item>
         <widget class="QPushButton" name="pushButton_3">
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
          <property name="text">
           <string>SetRows</string>
          </property>
