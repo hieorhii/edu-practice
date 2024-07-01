@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 #include <QKeyEvent>
+#include <formadd.h>
+#include <formdelete.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -24,7 +26,13 @@ protected:
 private slots:
     void on_pushButton_3_clicked();
 
+    void on_pushButton_clicked();
+
+    void on_pushButton_2_clicked();
+
 private:
     Ui::MainWindow *ui;
+    FormAdd form_add;
+    FormDelete form_delete;
 };
 #endif // MAINWINDOW_H

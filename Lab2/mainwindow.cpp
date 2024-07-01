@@ -41,3 +41,15 @@ void MainWindow::on_pushButton_3_clicked()
     ui->tableWidget->setRowCount(rowcount);
 }
 
+
+void MainWindow::on_pushButton_clicked()
+{
+    form_add.show();
+}
+
+
+void MainWindow::on_pushButton_2_clicked()
+{
+    form_delete.show();
+}
+

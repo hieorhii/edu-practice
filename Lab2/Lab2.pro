@@ -9,13 +9,19 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    formadd.cpp \
+    formdelete.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
+    formadd.h \
+    formdelete.h \
     mainwindow.h
 
 FORMS += \
+    formadd.ui \
+    formdelete.ui \
     mainwindow.ui
 
 # Default rules for deployment.
