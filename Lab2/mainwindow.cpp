@@ -1,12 +1,19 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QFile>
+#include <QPixmap>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    QPixmap pix(":/img/Qt-logo.png");
+    int w = ui->label_2->width();
+    int h = ui->label_2->height();
+
+    ui->label_2->setPixmap(pix.scaled(w, h));
+
     connect(&formAdd, &FormAdd::signalFormAdd, this, &MainWindow::slotFormAdd);
     connect(&formAdd, &FormAdd::signalFormAdd1, this, &MainWindow::slotFormAdd1);
     connect(&formDelete, &FormDelete::removeItemSignal, this, &MainWindow::removeItem);
@@ -141,3 +148,17 @@ void MainWindow::on_pushButton_5_clicked()
     }
 }
 
+void MainWindow::mousePressEvent(QMouseEvent *event)
+{
+    switch (event->button()) {
+    case Qt::RightButton:
+    {
+        ui->pushButton->setDisabled(true);
+        break;
+    }
+    case Qt::MiddleButton:
+    {
+        ui->pushButton->setEnabled(true);
+    }
+}
+}

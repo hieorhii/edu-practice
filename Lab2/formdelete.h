@@ -17,7 +17,7 @@ public:
     explicit FormDelete(QWidget *parent = nullptr);
     ~FormDelete();
 
-    void setModelData(const QStringList &items); // Метод для установки данных модели
+    void setModelData(const QStringList &items);
 
 private slots:
     void on_buttonBox_rejected();
@@ -28,7 +28,7 @@ private:
     QStringListModel *model;
 
 signals:
-    void removeItemSignal(const QString &item); // Сигнал для удаления элемента
+    void removeItemSignal(const QString &item);
 };
 
 #endif // FORMDELETE_H

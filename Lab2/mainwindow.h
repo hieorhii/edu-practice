@@ -27,6 +27,8 @@ public:
 protected:
     void keyPressEvent(QKeyEvent *e) override;
 
+    virtual void mousePressEvent(QMouseEvent*) override;
+
 private slots:
     void on_pushButton_3_clicked();
     void on_pushButton_clicked();
