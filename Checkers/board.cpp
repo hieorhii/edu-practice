@@ -4,12 +4,21 @@
 #include <QMouseEvent>
 
 Board::Board(QWidget *parent) : QWidget(parent), boardState(8, QVector<int>(8, 0)),
-    currentPlayer(1), selectedRow(-1), selectedCol(-1), pieceSelected(false) {
-    // Начальное расположение шашек
+    currentPlayer(2), selectedRow(-1), selectedCol(-1), pieceSelected(false) {
+    // Начальное расположение шашек на черных клетках
     for (int row = 0; row < 3; ++row) {
-        for (int col = (row % 2); col < 8; col += 2) {
-            boardState[row][col] = 1; // Черные шашки
-            boardState[7 - row][col] = 2; // Белые шашки
+        for (int col = 0; col < 8; ++col) {
+            if ((row + col) % 2 == 1) {
+                boardState[row][col] = 1; // Черные шашки
+            }
+        }
+    }
+
+    for (int row = 5; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            if ((row + col) % 2 == 1) {
+                boardState[row][col] = 2; // Белые шашки
+            }
         }
     }
 }
@@ -85,17 +94,19 @@ bool Board::isValidMove(int fromRow, int fromCol, int toRow, int toCol) {
     int rowDiff = toRow - fromRow;
     int colDiff = abs(toCol - fromCol);
 
-    if (colDiff != 1 && colDiff != 2) return false; // Перемещение только на одну или две клетки по диагонали
+    if (colDiff != rowDiff && colDiff != -rowDiff) return false; // Только диагональные ходы
 
-    if (currentPlayer == 1 && rowDiff != 1 && rowDiff != 2) return false; // Черные могут только вниз
-    if (currentPlayer == 2 && rowDiff != -1 && rowDiff != -2) return false; // Белые могут только вверх
+    if (colDiff == 1 && rowDiff == ((currentPlayer == 1) ? 1 : -1) && boardState[toRow][toCol] == 0) {
+        return true; // Обычный ход на одну клетку
+    }
 
-    if (colDiff == 1 && boardState[toRow][toCol] == 0) return true; // Обычный ход
-
-    if (colDiff == 2) return isCaptureMove(fromRow, fromCol, toRow, toCol);
+    if (colDiff == 2 && abs(rowDiff) == 2) {
+        return isCaptureMove(fromRow, fromCol, toRow, toCol); // Ход с захватом
+    }
 
     return false;
 }
+
 
 bool Board::isCaptureMove(int fromRow, int fromCol, int toRow, int toCol) {
     int rowMid = (fromRow + toRow) / 2;
@@ -108,6 +119,7 @@ bool Board::isCaptureMove(int fromRow, int fromCol, int toRow, int toCol) {
 
     return false;
 }
+
 
 void Board::movePiece(int fromRow, int fromCol, int toRow, int toCol) {
     if (isValidMove(fromRow, fromCol, toRow, toCol)) {
