@@ -55,7 +55,7 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
         on_pushButton_2_clicked();
         break;
     case Qt::Key_Down:
-        on_pushButton_3_clicked();
+        on_pushButton_4_clicked();
         break;
     }
 }
