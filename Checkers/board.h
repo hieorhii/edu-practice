@@ -23,7 +23,12 @@ private:
     int currentPlayer;
     int selectedRow, selectedCol;
     bool pieceSelected;
+    bool multiCapture;
 
+    bool checkWinCondition();
+    void resetGame();
+    bool hasCaptureMoves(int player);
+    void continueMultiCapture(int row, int col);
     bool isValidMove(int fromRow, int fromCol, int toRow, int toCol);
     bool isCaptureMove(int fromRow, int fromCol, int toRow, int toCol);
     void movePiece(int fromRow, int fromCol, int toRow, int toCol);

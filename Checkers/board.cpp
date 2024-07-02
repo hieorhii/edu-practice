@@ -2,9 +2,10 @@
 #include "board.h"
 #include <QPainter>
 #include <QMouseEvent>
+#include <QMessageBox>
 
 Board::Board(QWidget *parent) : QWidget(parent), boardState(8, QVector<int>(8, 0)),
-    currentPlayer(2), selectedRow(-1), selectedCol(-1), pieceSelected(false) {
+    currentPlayer(2), selectedRow(-1), selectedCol(-1), pieceSelected(false), multiCapture(false) {
     // Начальное расположение шашек на черных клетках
     for (int row = 0; row < 3; ++row) {
         for (int col = 0; col < 8; ++col) {
@@ -70,7 +71,6 @@ void Board::mousePressEvent(QMouseEvent *event) {
     int row = event->y() / (height() / 8);
     int col = event->x() / (width() / 8);
 
-    // Проверка, выбрана ли шашка
     if (!pieceSelected) {
         if (boardState[row][col] == currentPlayer) {
             selectedRow = row;
@@ -78,34 +78,53 @@ void Board::mousePressEvent(QMouseEvent *event) {
             pieceSelected = true;
         }
     } else {
-        // Попытка перемещения выбранной шашки
         if (isValidMove(selectedRow, selectedCol, row, col)) {
             movePiece(selectedRow, selectedCol, row, col);
-            pieceSelected = false;
-            // Смена текущего игрока
-            currentPlayer = (currentPlayer == 1) ? 2 : 1;
+            if (multiCapture) {
+                selectedRow = row;
+                selectedCol = col;
+                pieceSelected = true;
+                if (!hasCaptureMoves(currentPlayer)) {
+                    multiCapture = false;
+                    currentPlayer = (currentPlayer == 1) ? 2 : 1;
+                }
+            } else {
+                pieceSelected = false;
+                currentPlayer = (currentPlayer == 1) ? 2 : 1;
+            }
         } else {
-            pieceSelected = false; // Сбрасываем выбор при неверном ходе
+            pieceSelected = false;
         }
     }
 }
+
+
 
 bool Board::isValidMove(int fromRow, int fromCol, int toRow, int toCol) {
     int rowDiff = toRow - fromRow;
     int colDiff = abs(toCol - fromCol);
 
-    if (colDiff != rowDiff && colDiff != -rowDiff) return false; // Только диагональные ходы
+    // Только диагональные ходы
+    if (colDiff != rowDiff && colDiff != -rowDiff) return false;
 
-    if (colDiff == 1 && rowDiff == ((currentPlayer == 1) ? 1 : -1) && boardState[toRow][toCol] == 0) {
-        return true; // Обычный ход на одну клетку
+    // Проверка наличия обязательных ходов с захватом
+    if (hasCaptureMoves(currentPlayer)) {
+        return isCaptureMove(fromRow, fromCol, toRow, toCol);
     }
 
+    // Обычный ход на одну клетку
+    if (colDiff == 1 && rowDiff == ((currentPlayer == 1) ? 1 : -1) && boardState[toRow][toCol] == 0) {
+        return true;
+    }
+
+    // Ход с захватом
     if (colDiff == 2 && abs(rowDiff) == 2) {
-        return isCaptureMove(fromRow, fromCol, toRow, toCol); // Ход с захватом
+        return isCaptureMove(fromRow, fromCol, toRow, toCol);
     }
 
     return false;
 }
+
 
 
 bool Board::isCaptureMove(int fromRow, int fromCol, int toRow, int toCol) {
@@ -132,5 +151,108 @@ void Board::movePiece(int fromRow, int fromCol, int toRow, int toCol) {
         boardState[toRow][toCol] = boardState[fromRow][fromCol];
         boardState[fromRow][fromCol] = 0;
         update();
+
+        // Проверка возможности множественного захвата
+        if (abs(toRow - fromRow) == 2 && hasCaptureMoves(currentPlayer)) {
+            multiCapture = true;
+        } else {
+            multiCapture = false;
+            // Проверка условия победы
+            if (checkWinCondition()) {
+                QString winner = (currentPlayer == 1) ? "Black" : "White";
+                QMessageBox::information(this, "Game Over", winner + " wins!");
+                resetGame();
+            }
+        }
     }
+}
+
+
+void Board::resetGame() {
+    boardState = QVector<QVector<int>>(8, QVector<int>(8, 0));
+    currentPlayer = 2;
+    selectedRow = -1;
+    selectedCol = -1;
+    pieceSelected = false;
+    multiCapture = false;
+
+    // Начальное расположение шашек на черных клетках
+    for (int row = 0; row < 3; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            if ((row + col) % 2 == 1) {
+                boardState[row][col] = 1; // Черные шашки
+            }
+        }
+    }
+
+    for (int row = 5; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            if ((row + col) % 2 == 1) {
+                boardState[row][col] = 2; // Белые шашки
+            }
+        }
+    }
+    update();
+}
+
+
+bool Board::checkWinCondition() {
+    int opponent = (currentPlayer == 1) ? 2 : 1;
+    bool opponentHasPieces = false;
+    bool opponentHasMoves = false;
+
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            if (boardState[row][col] == opponent) {
+                opponentHasPieces = true;
+
+                // Проверяем, есть ли возможные ходы для шашки противника
+                for (int dRow = -1; dRow <= 1; dRow += 2) {
+                    for (int dCol = -1; dCol <= 1; dCol += 2) {
+                        int newRow = row + dRow;
+                        int newCol = col + dCol;
+
+                        // Проверяем ход на одну клетку
+                        if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8 && boardState[newRow][newCol] == 0) {
+                            if (isValidMove(row, col, newRow, newCol)) {
+                                opponentHasMoves = true;
+                            }
+                        }
+
+                        // Проверяем ход с захватом
+                        newRow = row + 2 * dRow;
+                        newCol = col + 2 * dCol;
+                        if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8 && boardState[newRow][newCol] == 0) {
+                            if (isCaptureMove(row, col, newRow, newCol)) {
+                                opponentHasMoves = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return !opponentHasPieces || !opponentHasMoves;
+}
+
+bool Board::hasCaptureMoves(int player) {
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            if (boardState[row][col] == player) {
+                for (int dRow = -2; dRow <= 2; dRow += 4) {
+                    for (int dCol = -2; dCol <= 2; dCol += 4) {
+                        int newRow = row + dRow;
+                        int newCol = col + dCol;
+                        if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+                            if (isCaptureMove(row, col, newRow, newCol)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return false;
 }
