@@ -6,6 +6,7 @@ StartMenu::StartMenu(QWidget *parent)
     , ui(new Ui::StartMenu)
 {
     ui->setupUi(this);
+    connect(ui->playButton, &QPushButton::clicked, this, &StartMenu::returnToBoard);
 }
 
 StartMenu::~StartMenu()

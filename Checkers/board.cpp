@@ -1,16 +1,26 @@
-// board.cpp
 #include "board.h"
+#include "ui_board.h"
 #include <QPainter>
 #include <QMouseEvent>
 #include <QMessageBox>
 
-Board::Board(QWidget *parent) : QWidget(parent), boardState(8, QVector<int>(8, 0)),
-    currentPlayer(2), selectedRow(-1), selectedCol(-1), pieceSelected(false), multiCapture(false) {
+Board::Board(QWidget *parent)
+    : QMainWindow(parent)
+    , ui(new Ui::Board)
+    , boardState(8, QVector<int>(8, Empty))
+    , currentPlayer(WhitePiece)
+    , selectedRow(-1)
+    , selectedCol(-1)
+    , pieceSelected(false)
+    , multiCapture(false)
+{
+    ui->setupUi(this);
+
     // Начальное расположение шашек на черных клетках
     for (int row = 0; row < 3; ++row) {
         for (int col = 0; col < 8; ++col) {
             if ((row + col) % 2 == 1) {
-                boardState[row][col] = 1; // Черные шашки
+                boardState[row][col] = BlackPiece;
             }
         }
     }
@@ -18,10 +28,36 @@ Board::Board(QWidget *parent) : QWidget(parent), boardState(8, QVector<int>(8, 0
     for (int row = 5; row < 8; ++row) {
         for (int col = 0; col < 8; ++col) {
             if ((row + col) % 2 == 1) {
-                boardState[row][col] = 2; // Белые шашки
+                boardState[row][col] = WhitePiece;
             }
         }
     }
+
+    stackedWidget = new QStackedWidget(this);
+    startMenu = new StartMenu(this);
+    QWidget *mainWidget = new QWidget(this);
+    layout = new QVBoxLayout(mainWidget);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+    mainWidget->setLayout(layout);
+
+    connect(startMenu, &StartMenu::returnToBoard, this, &Board::returnToBoard);
+
+    stackedWidget->addWidget(startMenu);
+    stackedWidget->addWidget(ui->centralwidget);
+
+    layout->addWidget(stackedWidget);
+    setCentralWidget(mainWidget);
+
+    stackedWidget->setCurrentWidget(startMenu);
+}
+
+void Board::returnToBoard() {
+    stackedWidget->setCurrentWidget(ui->centralwidget);
+}
+
+Board::~Board() {
+    delete ui;
 }
 
 QSize Board::sizeHint() const {
@@ -51,14 +87,21 @@ void Board::drawBoard(QPainter &painter) {
 void Board::drawPieces(QPainter &painter) {
     for (int row = 0; row < 8; ++row) {
         for (int col = 0; col < 8; ++col) {
-            if (boardState[row][col] == 1) {
+            if (boardState[row][col] == BlackPiece || boardState[row][col] == BlackKing) {
                 painter.setBrush(Qt::black);
                 painter.drawEllipse(col * width() / 8, row * height() / 8, width() / 8, height() / 8);
-            } else if (boardState[row][col] == 2) {
+                if (boardState[row][col] == BlackKing) {
+                    painter.setBrush(Qt::yellow);
+                    painter.drawEllipse(col * width() / 8 + width() / 32, row * height() / 8 + height() / 32, width() / 16, height() / 16);
+                }
+            } else if (boardState[row][col] == WhitePiece || boardState[row][col] == WhiteKing) {
                 painter.setBrush(Qt::white);
                 painter.drawEllipse(col * width() / 8, row * height() / 8, width() / 8, height() / 8);
+                if (boardState[row][col] == WhiteKing) {
+                    painter.setBrush(Qt::yellow);
+                    painter.drawEllipse(col * width() / 8 + width() / 32, row * height() / 8 + height() / 32, width() / 16, height() / 16);
+                }
             }
-            // Визуализация выделенной шашки
             if (pieceSelected && row == selectedRow && col == selectedCol) {
                 painter.setBrush(Qt::red);
                 painter.drawEllipse(col * width() / 8 + width() / 32, row * height() / 8 + height() / 32, width() / 16, height() / 16);
@@ -68,11 +111,11 @@ void Board::drawPieces(QPainter &painter) {
 }
 
 void Board::mousePressEvent(QMouseEvent *event) {
-    int row = event->y() / (height() / 8);
-    int col = event->x() / (width() / 8);
+    int row = event->position().y() / (height() / 8);
+    int col = event->position().x() / (width() / 8);
 
     if (!pieceSelected) {
-        if (boardState[row][col] == currentPlayer) {
+        if (boardState[row][col] == currentPlayer || boardState[row][col] == currentPlayer + 2) {
             selectedRow = row;
             selectedCol = col;
             pieceSelected = true;
@@ -86,11 +129,11 @@ void Board::mousePressEvent(QMouseEvent *event) {
                 pieceSelected = true;
                 if (!hasCaptureMoves(currentPlayer)) {
                     multiCapture = false;
-                    currentPlayer = (currentPlayer == 1) ? 2 : 1;
+                    currentPlayer = (currentPlayer == BlackPiece) ? WhitePiece : BlackPiece;
                 }
             } else {
                 pieceSelected = false;
-                currentPlayer = (currentPlayer == 1) ? 2 : 1;
+                currentPlayer = (currentPlayer == BlackPiece) ? WhitePiece : BlackPiece;
             }
         } else {
             pieceSelected = false;
@@ -98,26 +141,24 @@ void Board::mousePressEvent(QMouseEvent *event) {
     }
 }
 
-
-
 bool Board::isValidMove(int fromRow, int fromCol, int toRow, int toCol) {
     int rowDiff = toRow - fromRow;
     int colDiff = abs(toCol - fromCol);
 
-    // Только диагональные ходы
+    if (boardState[fromRow][fromCol] == BlackKing || boardState[fromRow][fromCol] == WhiteKing) {
+        return isKingMove(fromRow, fromCol, toRow, toCol);
+    }
+
     if (colDiff != rowDiff && colDiff != -rowDiff) return false;
 
-    // Проверка наличия обязательных ходов с захватом
     if (hasCaptureMoves(currentPlayer)) {
         return isCaptureMove(fromRow, fromCol, toRow, toCol);
     }
 
-    // Обычный ход на одну клетку
-    if (colDiff == 1 && rowDiff == ((currentPlayer == 1) ? 1 : -1) && boardState[toRow][toCol] == 0) {
+    if (colDiff == 1 && rowDiff == ((currentPlayer == BlackPiece) ? 1 : -1) && boardState[toRow][toCol] == Empty) {
         return true;
     }
 
-    // Ход с захватом
     if (colDiff == 2 && abs(rowDiff) == 2) {
         return isCaptureMove(fromRow, fromCol, toRow, toCol);
     }
@@ -125,52 +166,169 @@ bool Board::isValidMove(int fromRow, int fromCol, int toRow, int toCol) {
     return false;
 }
 
+bool Board::isKingMove(int fromRow, int fromCol, int toRow, int toCol) {
+    int rowDiff = abs(toRow - fromRow);
+    int colDiff = abs(toCol - fromCol);
 
+    if (rowDiff != colDiff) return false;
 
-bool Board::isCaptureMove(int fromRow, int fromCol, int toRow, int toCol) {
-    int rowMid = (fromRow + toRow) / 2;
-    int colMid = (fromCol + toCol) / 2;
+    int rowStep = (toRow > fromRow) ? 1 : -1;
+    int colStep = (toCol > fromCol) ? 1 : -1;
+    int row = fromRow + rowStep;
+    int col = fromCol + colStep;
+    bool opponentPieceFound = false;
 
-    if (boardState[toRow][toCol] != 0) return false; // Целевая клетка должна быть пустой
+    while (row != toRow && col != toCol) {
+        if (boardState[row][col] != Empty) {
+            if ((boardState[row][col] == currentPlayer) || (boardState[row][col] == currentPlayer + 2)) {
+                return false;
+            }
+            if (opponentPieceFound) {
+                return false;
+            }
+            opponentPieceFound = true;
+        }
+        row += rowStep;
+        col += colStep;
+    }
 
-    int opponent = (currentPlayer == 1) ? 2 : 1;
-    if (boardState[rowMid][colMid] == opponent) return true; // На средней клетке должна быть шашка противника
-
-    return false;
+    return opponentPieceFound;
 }
-
 
 void Board::movePiece(int fromRow, int fromCol, int toRow, int toCol) {
     if (isValidMove(fromRow, fromCol, toRow, toCol)) {
-        if (abs(toRow - fromRow) == 2) {
-            // Если это ход с захватом, удаляем захваченную шашку
-            int rowMid = (fromRow + toRow) / 2;
-            int colMid = (fromCol + toCol) / 2;
-            boardState[rowMid][colMid] = 0;
+        if (boardState[fromRow][fromCol] == BlackKing || boardState[fromRow][fromCol] == WhiteKing) {
+            // Обработка захвата для дамок
+            int rowStep = (toRow > fromRow) ? 1 : -1;
+            int colStep = (toCol > fromCol) ? 1 : -1;
+            int row = fromRow + rowStep;
+            int col = fromCol + colStep;
+
+            while (row != toRow && col != toCol) {
+                if (boardState[row][col] != Empty &&
+                    boardState[row][col] != currentPlayer &&
+                    boardState[row][col] != currentPlayer + 2) {
+                    boardState[row][col] = Empty;
+                }
+                row += rowStep;
+                col += colStep;
+            }
+        } else {
+            // Обработка захвата для обычных шашек
+            if (abs(toRow - fromRow) == 2) {
+                int rowMid = (fromRow + toRow) / 2;
+                int colMid = (fromCol + toCol) / 2;
+                boardState[rowMid][colMid] = Empty;
+            }
         }
+
         boardState[toRow][toCol] = boardState[fromRow][fromCol];
-        boardState[fromRow][fromCol] = 0;
+        boardState[fromRow][fromCol] = Empty;
+        checkForKing(toRow, toCol);
         update();
 
-        // Проверка возможности множественного захвата
-        if (abs(toRow - fromRow) == 2 && hasCaptureMoves(currentPlayer)) {
+        if ((abs(toRow - fromRow) == 2 || isKingMove(fromRow, fromCol, toRow, toCol)) && hasCaptureMoves(currentPlayer)) {
             multiCapture = true;
         } else {
             multiCapture = false;
-            // Проверка условия победы
             if (checkWinCondition()) {
-                QString winner = (currentPlayer == 1) ? "Black" : "White";
+                QString winner = (currentPlayer == BlackPiece || currentPlayer == BlackKing) ? "Black" : "White";
                 QMessageBox::information(this, "Game Over", winner + " wins!");
                 resetGame();
             }
         }
     }
 }
+void Board::checkForKing(int row, int col) {
+    if (boardState[row][col] == BlackPiece && row == 7) {
+        boardState[row][col] = BlackKing;
+    } else if (boardState[row][col] == WhitePiece && row == 0) {
+        boardState[row][col] = WhiteKing;
+    }
+}
 
+bool Board::hasCaptureMoves(int player) {
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            if (boardState[row][col] == player || boardState[row][col] == player + 2) {
+                if (isCaptureAvailable(row, col)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+bool Board::isCaptureMove(int fromRow, int fromCol, int toRow, int toCol) {
+    int rowMid = (fromRow + toRow) / 2;
+    int colMid = (fromCol + toCol) / 2;
+
+    if (boardState[fromRow][fromCol] == BlackKing || boardState[fromRow][fromCol] == WhiteKing) {
+        return isKingMove(fromRow, fromCol, toRow, toCol);
+    }
+
+    if (boardState[toRow][toCol] == Empty &&
+        boardState[rowMid][colMid] != Empty &&
+        boardState[rowMid][colMid] != boardState[fromRow][fromCol] &&
+        boardState[rowMid][colMid] != boardState[fromRow][fromCol] + 2) {
+        return true;
+    }
+
+    return false;
+}
+
+bool Board::isCaptureAvailable(int row, int col) {
+    if (boardState[row][col] == BlackKing || boardState[row][col] == WhiteKing) {
+        // Проверка ходов дамки
+        for (int dRow = -1; dRow <= 1; dRow += 2) {
+            for (int dCol = -1; dCol <= 1; dCol += 2) {
+                int newRow = row + dRow * 2;
+                int newCol = col + dCol * 2;
+                while (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+                    if (isCaptureMove(row, col, newRow, newCol)) {
+                        return true;
+                    }
+                    newRow += dRow;
+                    newCol += dCol;
+                }
+            }
+        }
+    } else {
+        // Проверка обычных шашек
+        for (int dRow = -1; dRow <= 1; dRow += 2) {
+            for (int dCol = -1; dCol <= 1; dCol += 2) {
+                int newRow = row + dRow * 2;
+                int newCol = col + dCol * 2;
+                if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8 && isCaptureMove(row, col, newRow, newCol)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+bool Board::checkWinCondition() {
+    int blackCount = 0;
+    int whiteCount = 0;
+
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            if (boardState[row][col] == BlackPiece || boardState[row][col] == BlackKing) {
+                blackCount++;
+            } else if (boardState[row][col] == WhitePiece || boardState[row][col] == WhiteKing) {
+                whiteCount++;
+            }
+        }
+    }
+
+    return blackCount == 0 || whiteCount == 0;
+}
 
 void Board::resetGame() {
-    boardState = QVector<QVector<int>>(8, QVector<int>(8, 0));
-    currentPlayer = 2;
+    boardState.fill(QVector<int>(8, Empty));
+    currentPlayer = WhitePiece;
     selectedRow = -1;
     selectedCol = -1;
     pieceSelected = false;
@@ -180,7 +338,7 @@ void Board::resetGame() {
     for (int row = 0; row < 3; ++row) {
         for (int col = 0; col < 8; ++col) {
             if ((row + col) % 2 == 1) {
-                boardState[row][col] = 1; // Черные шашки
+                boardState[row][col] = BlackPiece;
             }
         }
     }
@@ -188,71 +346,10 @@ void Board::resetGame() {
     for (int row = 5; row < 8; ++row) {
         for (int col = 0; col < 8; ++col) {
             if ((row + col) % 2 == 1) {
-                boardState[row][col] = 2; // Белые шашки
+                boardState[row][col] = WhitePiece;
             }
         }
     }
+
     update();
-}
-
-
-bool Board::checkWinCondition() {
-    int opponent = (currentPlayer == 1) ? 2 : 1;
-    bool opponentHasPieces = false;
-    bool opponentHasMoves = false;
-
-    for (int row = 0; row < 8; ++row) {
-        for (int col = 0; col < 8; ++col) {
-            if (boardState[row][col] == opponent) {
-                opponentHasPieces = true;
-
-                // Проверяем, есть ли возможные ходы для шашки противника
-                for (int dRow = -1; dRow <= 1; dRow += 2) {
-                    for (int dCol = -1; dCol <= 1; dCol += 2) {
-                        int newRow = row + dRow;
-                        int newCol = col + dCol;
-
-                        // Проверяем ход на одну клетку
-                        if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8 && boardState[newRow][newCol] == 0) {
-                            if (isValidMove(row, col, newRow, newCol)) {
-                                opponentHasMoves = true;
-                            }
-                        }
-
-                        // Проверяем ход с захватом
-                        newRow = row + 2 * dRow;
-                        newCol = col + 2 * dCol;
-                        if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8 && boardState[newRow][newCol] == 0) {
-                            if (isCaptureMove(row, col, newRow, newCol)) {
-                                opponentHasMoves = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return !opponentHasPieces || !opponentHasMoves;
-}
-
-bool Board::hasCaptureMoves(int player) {
-    for (int row = 0; row < 8; ++row) {
-        for (int col = 0; col < 8; ++col) {
-            if (boardState[row][col] == player) {
-                for (int dRow = -2; dRow <= 2; dRow += 4) {
-                    for (int dCol = -2; dCol <= 2; dCol += 4) {
-                        int newRow = row + dRow;
-                        int newCol = col + dCol;
-                        if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
-                            if (isCaptureMove(row, col, newRow, newCol)) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return false;
 }

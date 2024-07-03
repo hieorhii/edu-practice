@@ -11,6 +11,8 @@ class StartMenu : public QMainWindow
 {
     Q_OBJECT
 
+signals:
+    void returnToBoard();
 public:
     explicit StartMenu(QWidget *parent = nullptr);
     ~StartMenu();
