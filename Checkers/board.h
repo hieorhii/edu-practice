@@ -4,7 +4,8 @@
 #include <QMainWindow>
 #include <QVector>
 #include <QStackedWidget>
-#include "qboxlayout.h"
+#include <QStack>
+#include <QVBoxLayout>
 #include "startmenu.h"
 
 QT_BEGIN_NAMESPACE
@@ -25,7 +26,6 @@ class Board : public QMainWindow {
 public:
     Board(QWidget *parent = nullptr);
     ~Board();
-    QSize sizeHint() const override;
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -34,6 +34,7 @@ protected:
 private:
     Ui::Board *ui;
     QVector<QVector<int>> boardState;
+    QStack<QVector<QVector<int>>> boardHistory; 
     int currentPlayer;
     int selectedRow;
     int selectedCol;
@@ -41,6 +42,7 @@ private:
     bool multiCapture;
     QStackedWidget *stackedWidget;
     StartMenu *startMenu;
+    QWidget *mainWidget;
     QVBoxLayout *layout;
 
     void drawBoard(QPainter &painter);
@@ -55,8 +57,11 @@ private:
     bool checkWinCondition();
     void resetGame();
 
+    
+
 private slots:
     void returnToBoard();
+    void undoMove(); 
 };
 
-#endif // BOARD_H
+#endif 

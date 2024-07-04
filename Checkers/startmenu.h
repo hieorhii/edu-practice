@@ -2,6 +2,7 @@
 #define STARTMENU_H
 
 #include <QMainWindow>
+#include <QKeyEvent>
 
 namespace Ui {
 class StartMenu;
@@ -19,6 +20,11 @@ public:
 
 private:
     Ui::StartMenu *ui;
+
+protected:
+    void keyPressEvent(QKeyEvent *e) override;
+private slots:
+    void on_playButton_clicked();
 };
 
-#endif // STARTMENU_H
+#endif
